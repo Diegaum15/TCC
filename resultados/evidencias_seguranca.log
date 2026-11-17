@@ -1,0 +1,37 @@
+==========================================================
+EVIDÊNCIAS EXPERIMENTAIS - SEGURANÇA E RESILIÊNCIA (TCC)
+Data: 2026-11-17T16:41:24-03:00
+==========================================================
+
+>>> 1. INICIALIZAÇÃO E DKG DISTRIBUÍDO (2-DE-3) <<<
+[COORDENADOR] Iniciando DKG (3 participantes | threshold 2-de-3).
+[SUCESSO] DKG concluído em 234.82 ms! Chave pública do grupo: 09194a9d4bb333ba7206f7124c76061dcb6e1a8111447cc1e16b65264b72565b
+
+>>> 2. QUÓRUM DINÂMICO (PARES 1-2, 1-3 E 2-3) <<<
+RESULTADO_ASSINATURA | Nos: [1, 2] | Latencia_ms: 60.151 | TX_bytes: 1021 | RX_bytes: 962
+RESULTADO_ASSINATURA | Nos: [1, 3] | Latencia_ms: 61.829 | TX_bytes: 1021 | RX_bytes: 962
+RESULTADO_ASSINATURA | Nos: [2, 3] | Latencia_ms: 61.568 | TX_bytes: 1021 | RX_bytes: 962
+
+>>> 3. TESTES NEGATIVOS DE SEGURANÇA (NONCES E ADULTERAÇÃO) <<<
+
+========== BATERIA DE TESTES DE SEGURANÇA ==========
+
+[TESTE 1] Tentativa de gerar novos nonces com operação pendente...
+  -> Resposta do Nó 1: ERROR SIGNING_ALREADY_PENDING
+[TESTE 2] Envio de SigningPackage com compromisso substituído (adulteração)...
+  -> Resposta do Nó 1 ao pacote adulterado: ERROR COMMITMENT_MISMATCH
+[TESTE 3] Tentativa de assinar (SIGN_SHARE) após pacote rejeitado...
+  -> Resposta do Nó 1: ERROR SIGNING_STATE_INCOMPLETE
+
+[SUCESSO] Todos os controles de segurança contra adulteração e reuso de nonces foram validados!
+
+>>> 4. TOLERÂNCIA A FALHAS: NÓ 2 DESLIGADO (OPERANDO COM 1 E 3) <<<
+frost-node-2
+RESULTADO_ASSINATURA | Nos: [1, 3] | Latencia_ms: 60.697 | TX_bytes: 1021 | RX_bytes: 962
+
+>>> 5. FALHA DE QUÓRUM: NÓS 2 E 3 DESLIGADOS (APENAS 1 DISPONÍVEL) <<<
+frost-node-3
+[AVISO] Tentativa 1/3 para frost-node-3:5000 falhou: failed to lookup address information: Temporary failure in name resolution
+[AVISO] Tentativa 2/3 para frost-node-3:5000 falhou: failed to lookup address information: Temporary failure in name resolution
+
+>>> 6. RESTAURANDO CONTÊINERES <<<

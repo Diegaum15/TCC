@@ -1,0 +1,5 @@
+NAME           CPU %     MEM USAGE / LIMIT
+frost-node-1   0.00%     3.621MiB / 7.579GiB
+frost-node-2   0.00%     1.672MiB / 7.579GiB
+frost-node-3   0.00%     992KiB / 7.579GiB
+ssh-server     0.26%     15.65MiB / 7.579GiB

@@ -1,0 +1,14 @@
+# Rust build artifacts
+frost-dkg/target/
+**/*.rs.bk
+
+# Private keys & generated certificates
+frost-dkg/certs/**/*.pem
+frost-dkg/certs/**/*.key
+frost-dkg/certs/**/*.srl
+
+# Python cache & virtualenvs
+__pycache__/
+*.py[cod]
+.venv/
+venv/

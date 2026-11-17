@@ -1,0 +1,27 @@
+
+# EXPLICACAO DO PROJETO RUST (frost-dkg)
+[package]
+name = "frost-dkg"
+version = "0.1.0"
+edition = "2024"                      # Edição da linguagem Rust
+
+[dependencies]
+# Implementação para assinaturas limiares FROST
+# sobre a curva Edwards25519 (RFC 9591), incluindo DKG em 3 rodadas e agregação.
+frost-ed25519 = "3"
+
+# Gerador de números pseudoaleatórios criptograficamente seguro (OsRng)
+# utilizado na criação dos polinômios secretos do DKG e nonces efêmeros.
+rand = "0.8"
+
+# Implementação pura em Rust do protocolo TLS 1.2/1.3, utilizada para construir
+# canais com autenticação mútua (mTLS) entre coordenador e participantes.
+rustls = "0.23"
+
+# Parser de arquivos no formato PEM para carregar certificados X.509 e chaves
+# privadas PKCS#8 do sistema de arquivos para o rustls.
+rustls-pemfile = "2"
+
+# Codificação e decodificação hexadecimal utilizada para serializar pacotes
+# criptográficos binários no protocolo textual sobre sockets TCP/mTLS.
+hex = "0.4"

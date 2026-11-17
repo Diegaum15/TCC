@@ -1,0 +1,108 @@
+
+# ORQUESTRAÇÃO DO AMBIENTE EXPERIMENTAL (TCC - FROST 2-DE-3 VS. SSH)
+# Define 6 serviços isolados em uma rede bridge dedicada (tcc-net):
+# - 3 nós participantes do esquema limiar (frost-node-1..3)
+# - 1 coordenador de protocolo e benchmark (frost-coordinator)
+# - 2 serviços de linha de base (baseline) para SSH convencional (ssh-server/client)
+
+services:
+  # BASELINE (SERVIDOR): Servidor OpenSSH alvo para medição de latência padrão
+  ssh-server:
+    image: linuxserver/openssh-server:latest
+    container_name: ssh-server
+    environment:
+      - PUID=1000                       # UID do usuário interno no contêiner
+      - PGID=1000                       # GID do grupo interno
+      - TZ=America/Sao_Paulo            # Fuso horário para logs consistentes
+      - USER_NAME=tccuser               # Usuário utilizado nos testes de autenticação
+      - PASSWORD_ACCESS=true            # Habilita acesso inicial para provisionamento
+      - USER_PASSWORD=tccpassword       # Senha inicial (nos testes usa-se chave Ed25519)
+    ports:
+      - "2222:2222"                     # Expõe a porta SSH não-privilegiada 
+    networks:
+      - tcc-net
+
+  # PARTICIPANTE 1 (FROST): Detém a fatia 1 da chave privada distribuída
+  
+  frost-node-1:
+    build:
+      context: ./frost-dkg                                # Compila o binário Rust com iproute2 instalado
+    container_name: frost-node-1
+    command: ["./target/release/frost_node", "1", "5000"] # ID=1, escutando na porta 5000
+    cap_add:
+      - NET_ADMIN                                         # Permite injeção de atraso de rede via tc/netem
+    volumes:
+      # Monta certificado e chave privada X.509 próprios em modo somente-leitura (mTLS)
+      - ./frost-dkg/certs/frost-node-1:/app/certs/identity:ro
+      # Monta o certificado raiz da Autoridade Certificadora (CA) para validar pares
+      - ./frost-dkg/certs/frost-node-1/ca.crt:/app/certs/ca.crt:ro
+    networks:
+      - tcc-net
+
+ 
+  # PARTICIPANTE 2 (FROST): Detém a fatia 2 da chave privada distribuída
+
+  frost-node-2:
+    build:
+      context: ./frost-dkg
+    container_name: frost-node-2
+    command: ["./target/release/frost_node", "2", "5000"] # ID=2, escutando na porta 5000
+    cap_add:
+      - NET_ADMIN                                         # Permite emulação de latência WAN (tc/netem)
+    volumes:
+      - ./frost-dkg/certs/frost-node-2:/app/certs/identity:ro
+      - ./frost-dkg/certs/frost-node-2/ca.crt:/app/certs/ca.crt:ro
+    networks:
+      - tcc-net
+
+  
+  # PARTICIPANTE 3 (FROST): Detém a fatia 3 da chave privada distribuída
+  
+  frost-node-3:
+    build:
+      context: ./frost-dkg
+    container_name: frost-node-3
+    command: ["./target/release/frost_node", "3", "5000"] # ID=3, escutando na porta 5000
+    cap_add:
+      - NET_ADMIN                                         # Permite emulação de latência WAN (tc/netem)
+    volumes:
+      - ./frost-dkg/certs/frost-node-3:/app/certs/identity:ro
+      - ./frost-dkg/certs/frost-node-3/ca.crt:/app/certs/ca.crt:ro
+    networks:
+      - tcc-net
+
+  
+  # COORDENADOR (FROST): Orquestra DKG, coleta compromissos/shares e agrega
+  
+  frost-coordinator:
+    build:
+      context: ./frost-dkg
+    container_name: frost-coordinator
+    command: ["./target/release/frost_coordinator"] # Modo padrão: DKG + Assinatura
+    volumes:
+      # Identidade mTLS própria do coordenador (autenticado pelos nós servidores)
+      - ./frost-dkg/certs/frost-coordinator:/app/certs/identity:ro
+      - ./frost-dkg/certs/frost-coordinator/ca.crt:/app/certs/ca.crt:ro
+    depends_on:
+      - frost-node-1
+      - frost-node-2
+      - frost-node-3
+    networks:
+      - tcc-net
+
+ 
+  # BASELINE (CLIENTE): Cliente OpenSSH para medição comparativa (Ambiente A)
+  
+  ssh-client:
+    image: debian:bookworm-slim
+    container_name: ssh-client
+    command: tail -f /dev/null          # Mantém o contêiner ativo para chamadas docker exec
+    cap_add:
+      - NET_ADMIN                       # Aplica o mesmo atraso tc/netem para comparação justa
+    networks:
+      - tcc-net
+
+# REDE VIRTUAL ISOLADA: Interliga todos os contêineres via DNS interno Docker
+networks:
+  tcc-net:
+    driver: bridge
